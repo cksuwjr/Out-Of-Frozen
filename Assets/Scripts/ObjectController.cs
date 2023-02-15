@@ -22,7 +22,7 @@ public class ObjectController : MonoBehaviour
 
     // 기본모듈
     private Rigidbody2D rb;
-
+    private SpriteRenderer sr;
 
 
     // 바라보는 방향
@@ -43,6 +43,7 @@ public class ObjectController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        sr = GetComponent<SpriteRenderer>();
 
         if (OnLandEvent == null)
             OnLandEvent = new UnityEvent();
@@ -72,6 +73,11 @@ public class ObjectController : MonoBehaviour
         Vector3 targetVelocity = new Vector2(direction * speed, 0);
 
         rb.velocity = Vector2.SmoothDamp(rb.velocity, targetVelocity, ref m_Velocity, MovementSmoothing);
+        if (direction == 1)
+            sr.flipX = false;
+        else if(direction == -1)
+            sr.flipX = true;
+
 
         if (isGround && jump)
         {
