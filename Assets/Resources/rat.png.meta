@@ -14,6 +14,12 @@ TextureImporter:
   - first:
       213: -513956825706076816
     second: rat_3
+  - first:
+      213: -8905257789077479170
+    second: rat_4
+  - first:
+      213: -6745645932972450358
+    second: rat_5
   externalObjects: {}
   serializedVersion: 11
   mipmaps:
@@ -182,6 +188,48 @@ TextureImporter:
       bones: []
       spriteID: 075e6e57dfe0ed8f0800000000000000
       internalID: -513956825706076816
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: rat_4
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ef0a1c0193b2a6480800000000000000
+      internalID: -8905257789077479170
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: rat_5
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: acd5e9093c6a262a0800000000000000
+      internalID: -6745645932972450358
       vertices: []
       indices: 
       edges: []
