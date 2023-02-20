@@ -17,6 +17,8 @@ public class ObjectController : MonoBehaviour
     [SerializeField] private LayerMask WhatIsGround;
     [SerializeField] private Transform GroundCheck;
 
+    [SerializeField] private LayerMask WhoIsEnemy;
+
     const float GroundedRadius = .2f;
     private bool isGround;
 
@@ -36,7 +38,7 @@ public class ObjectController : MonoBehaviour
 
     // 이벤트 - 착지
     public UnityEvent OnLandEvent;
-
+    
     [System.Serializable]
     public class BoolEvent : UnityEvent<bool> { }
 
@@ -47,6 +49,7 @@ public class ObjectController : MonoBehaviour
 
         if (OnLandEvent == null)
             OnLandEvent = new UnityEvent();
+
     }
 
     private void FixedUpdate()
@@ -55,27 +58,31 @@ public class ObjectController : MonoBehaviour
         isGround = false;
 
         Collider2D collider = Physics2D.OverlapCircle(GroundCheck.position, GroundedRadius, WhatIsGround);
-        if (collider) 
-        { 
+        if (collider)
+        {
             isGround = true;
             if (!wasGrounded)
                 OnLandEvent.Invoke();
         }
-        
+
     }
 
     public void Move(float direction, float speed, bool jump)
     {
+        
         if (isGround)
         {
 
         }
         Vector3 targetVelocity = new Vector2(direction * speed, 0);
 
+        if (direction != 0)
+            this.direction = new Vector3(direction, 0);
+
         rb.velocity = Vector2.SmoothDamp(rb.velocity, targetVelocity, ref m_Velocity, MovementSmoothing);
         if (direction == 1)
             sr.flipX = false;
-        else if(direction == -1)
+        else if (direction == -1)
             sr.flipX = true;
 
 
@@ -86,5 +93,44 @@ public class ObjectController : MonoBehaviour
             rb.AddForce(new Vector2(0f, JumpForce));
         }
     }
+    public void Attack(Vector3 attackSize, Vector3 attackOffset, string attackDir = "Front", string CC = "None")
+    {
+        Vector3 attackPos = transform.position + attackOffset;
+        if (attackDir == "Front")
+            attackPos += new Vector3((((attackSize.x - 2) / 2) * direction.x), 0);
+        else if (attackDir == "Back")
+            attackPos -= new Vector3((((attackSize.x - 2) / 2) * direction.x), 0);
+        else // Middle
+            { }
 
+        Debug.Log(direction);
+        Debug.Log(attackDir);
+        Collider2D[] colliders = Physics2D.OverlapBoxAll(attackPos, attackSize / 2, WhoIsEnemy);
+        //Debug.Log("개체수: " + colliders.Length);
+        foreach(Collider2D i in colliders)
+        {
+            GameObject Deffender = i.gameObject;
+            Hit isHitted = i.GetComponent<Hit>();
+            Attack iAttacked = GetComponent<Attack>();
+            if (isHitted)
+            {
+                if (iAttacked.isAttackTarget(Deffender)) // 공격대상인가? 판단
+                {
+                    if (isHitted.isHitTarget()) // 내가 피격대상인지 상대가 직접 판단
+                    {
+                        int damage = iAttacked.CalcDamage(gameObject, Deffender, 50); // 데미지 계산 1 (계산공식 적용)
+                        isHitted.OnHit(gameObject, damage, false, CC); // 데미지 계산 2 (회피인가 적중인가)
+                    }
+                }
+            }
+
+        }
+    }
+    /*
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.green;
+        Gizmos.DrawCube(transform.position + new Vector3(direction.x, 0, 0), new Vector3(5,1));
+    }
+    */
 }
