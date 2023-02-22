@@ -20,7 +20,7 @@ public class ObjectController : MonoBehaviour
     [SerializeField] private LayerMask WhoIsEnemy;
 
     const float GroundedRadius = .2f;
-    private bool isGround;
+    public bool isGround;
 
     // 기본모듈
     private Rigidbody2D rb;
@@ -64,7 +64,15 @@ public class ObjectController : MonoBehaviour
             if (!wasGrounded)
                 OnLandEvent.Invoke();
         }
+        /*
+        if(rb.velocity.y > 0)
+        {
+            Debug.Log("지상: " + rb.velocity.y);
 
+            
+        }
+        else Debug.Log("지하: " + rb.velocity.y);
+        */
     }
 
     public void Move(float direction, float speed, bool jump)
@@ -74,7 +82,7 @@ public class ObjectController : MonoBehaviour
         {
 
         }
-        Vector3 targetVelocity = new Vector2(direction * speed, 0);
+        Vector3 targetVelocity = new Vector2(direction * speed, rb.velocity.y);
 
         if (direction != 0)
             this.direction = new Vector3(direction, 0);
@@ -126,6 +134,46 @@ public class ObjectController : MonoBehaviour
 
         }
     }
+
+    void StepOnObstacle()
+    {
+        rb.velocity = new Vector2(rb.velocity.x, 0);
+        rb.AddForce(new Vector2(0, 400f));
+    }
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        GameObject Target = collision.gameObject;
+        
+        if (Target.layer == LayerMask.NameToLayer("Mob"))
+        {
+            if (rb.velocity.y <= -1f && transform.position.y > Target.transform.position.y && !isGround)
+            {
+                //Debug.Log("죽음!: " + rb.velocity.y);
+                Target.GetComponent<Rat>().Die();
+                StepOnObstacle();
+            }
+            else
+            {
+                Die(); 
+            }
+        }
+    }
+
+    public void Die()
+    {
+        Instantiate(gameObject, transform.position, Quaternion.identity); // ㅋㅋ
+        //CancelInvoke("Pattern");
+        rb.constraints = RigidbodyConstraints2D.FreezePositionX;
+        //anim.SetTrigger("Hit");
+        //Destroy(anim);
+        rb.velocity = Vector3.zero;
+        rb.AddForce(new Vector2(0, 400f));
+        GetComponent<SpriteRenderer>().flipY = true;
+        GetComponent<BoxCollider2D>().isTrigger = true;
+        Destroy(gameObject, 2);
+    }
+
+
     /*
     private void OnDrawGizmos()
     {

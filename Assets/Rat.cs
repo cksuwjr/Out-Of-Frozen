@@ -117,4 +117,18 @@ public class Rat : MonoBehaviour
 
         InvokeRepeating("Pattern", stuntime, 1.5f);
     }
+    
+
+    public void Die()
+    {
+        CancelInvoke("Pattern");
+        rb.constraints = RigidbodyConstraints2D.FreezePositionX;
+        anim.SetTrigger("Hit");
+        //Destroy(anim);
+        rb.velocity = Vector3.zero;
+        rb.AddForce(new Vector2(0, 200f));
+        GetComponent<SpriteRenderer>().flipY = true;
+        GetComponent<BoxCollider2D>().isTrigger = true;
+        Destroy(gameObject, 2);
+    }
 }

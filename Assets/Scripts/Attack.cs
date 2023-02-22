@@ -50,7 +50,7 @@ public class Attack : MonoBehaviour
         }
         else if (attack == "Fear")
         {
-            controller.Attack(new Vector3(5, 1), Vector3.zero, "Middle", "Fear");
+            controller.Attack(new Vector3(7, 1), Vector3.zero, "Middle", "Fear");
         }
         attack = "None";
     }
