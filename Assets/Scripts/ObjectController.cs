@@ -5,38 +5,32 @@ using UnityEngine.Events;
 
 public class ObjectController : MonoBehaviour
 {
-
-    // 점프 옵션
     [SerializeField] private float JumpForce = 400f;
 
-    // 움직임 옵션
     [Range(0, .3f)] [SerializeField] private float MovementSmoothing = .05f;
 
 
-    // 바닥 체크
     [SerializeField] private LayerMask WhatIsGround;
     [SerializeField] private Transform GroundCheck;
 
     [SerializeField] private LayerMask WhoIsEnemy;
 
+    [SerializeField] private Status stat;
+
     const float GroundedRadius = .2f;
     public bool isGround;
 
-    // 기본모듈
     private Rigidbody2D rb;
     private SpriteRenderer sr;
+    private Animator anim;
 
-
-    // 바라보는 방향
     public Vector2 direction = Vector2.zero;
     private Vector2 m_Velocity = Vector2.zero;
 
 
-    // 이벤트
     [Header("Events")]
     [Space]
 
-    // 이벤트 - 착지
     public UnityEvent OnLandEvent;
     
     [System.Serializable]
@@ -46,7 +40,7 @@ public class ObjectController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         sr = GetComponent<SpriteRenderer>();
-
+        anim = GetComponent<Animator>();
         if (OnLandEvent == null)
             OnLandEvent = new UnityEvent();
 
@@ -64,15 +58,6 @@ public class ObjectController : MonoBehaviour
             if (!wasGrounded)
                 OnLandEvent.Invoke();
         }
-        /*
-        if(rb.velocity.y > 0)
-        {
-            Debug.Log("지상: " + rb.velocity.y);
-
-            
-        }
-        else Debug.Log("지하: " + rb.velocity.y);
-        */
     }
 
     public void Move(float direction, float speed, bool jump)
@@ -86,7 +71,6 @@ public class ObjectController : MonoBehaviour
 
         if (direction != 0)
             this.direction = new Vector3(direction, 0);
-
         rb.velocity = Vector2.SmoothDamp(rb.velocity, targetVelocity, ref m_Velocity, MovementSmoothing);
         if (direction == 1)
             sr.flipX = false;
@@ -114,7 +98,6 @@ public class ObjectController : MonoBehaviour
         Debug.Log(direction);
         Debug.Log(attackDir);
         Collider2D[] colliders = Physics2D.OverlapBoxAll(attackPos, attackSize / 2, WhoIsEnemy);
-        //Debug.Log("개체수: " + colliders.Length);
         foreach(Collider2D i in colliders)
         {
             GameObject Deffender = i.gameObject;
@@ -122,12 +105,12 @@ public class ObjectController : MonoBehaviour
             Attack iAttacked = GetComponent<Attack>();
             if (isHitted)
             {
-                if (iAttacked.isAttackTarget(Deffender)) // 공격대상인가? 판단
+                if (iAttacked.isAttackTarget(Deffender))
                 {
-                    if (isHitted.isHitTarget()) // 내가 피격대상인지 상대가 직접 판단
+                    if (isHitted.isHitTarget())
                     {
-                        int damage = iAttacked.CalcDamage(gameObject, Deffender, 50); // 데미지 계산 1 (계산공식 적용)
-                        isHitted.OnHit(gameObject, damage, false, CC); // 데미지 계산 2 (회피인가 적중인가)
+                        int damage = iAttacked.CalcDamage(gameObject, Deffender, 1);
+                        isHitted.OnHit(gameObject, damage, false, CC);
                     }
                 }
             }
@@ -142,37 +125,67 @@ public class ObjectController : MonoBehaviour
     }
     private void OnCollisionEnter2D(Collision2D collision)
     {
+        if (gameObject.layer == LayerMask.NameToLayer("Unbeatable")) return;
+
         GameObject Target = collision.gameObject;
         
         if (Target.layer == LayerMask.NameToLayer("Mob"))
         {
-            if (rb.velocity.y <= -1f && transform.position.y > Target.transform.position.y && !isGround)
+            if (rb.velocity.y < 0 && transform.position.y > Target.transform.position.y && !isGround)
             {
-                //Debug.Log("죽음!: " + rb.velocity.y);
-                Target.GetComponent<Rat>().Die();
+                StartCoroutine(Unbeatable(0.3f));
+                Target.GetComponent<Hit>().OnHit(gameObject, 1, false, "None");
+                //Target.GetComponent<ObjectController>().GetHurt(1);
                 StepOnObstacle();
             }
             else
             {
-                Die(); 
+                StartCoroutine(Unbeatable(0.3f));
+                GetComponent<ObjectController>().GetHurt(1);
+                int dir = Target.transform.position.x > transform.position.x ? 1 : -1;
+
+                SpriteRenderer sr = GetComponent<SpriteRenderer>();
+                if (dir == 1)
+                    sr.flipX = false;
+                else if (dir == -1)
+                    sr.flipX = true;
+
+                rb.AddForce(new Vector2(-dir * 275f, 175f));
+                
+
             }
         }
     }
-
-    public void Die()
+    virtual public void GetHurt(int damage)
     {
-        Instantiate(gameObject, transform.position, Quaternion.identity); // ㅋㅋ
-        //CancelInvoke("Pattern");
+        anim.SetTrigger("Hit");
+
+        stat.Hp -= damage;
+        if (stat.Hp <= 0)
+            Die();
+    }
+
+    virtual public void Die()
+    {
+
+        //Instantiate(gameObject, transform.position, Quaternion.identity);
         rb.constraints = RigidbodyConstraints2D.FreezePositionX;
-        //anim.SetTrigger("Hit");
-        //Destroy(anim);
         rb.velocity = Vector3.zero;
         rb.AddForce(new Vector2(0, 400f));
         GetComponent<SpriteRenderer>().flipY = true;
         GetComponent<BoxCollider2D>().isTrigger = true;
+        Destroy(GetComponent<Move>());
         Destroy(gameObject, 2);
     }
 
+    // 臾댁쟻
+    IEnumerator Unbeatable(float time)
+    {
+        LayerMask layer = gameObject.layer;
+        gameObject.layer = LayerMask.NameToLayer("Unbeatable");
+        yield return new WaitForSeconds(time);
+        gameObject.layer = layer;
+    }
 
     /*
     private void OnDrawGizmos()

@@ -27,7 +27,6 @@ public class Move : MonoBehaviour
         GameObject background = GameObject.FindGameObjectWithTag("Background");
 
 
-        // 이동거리 비례로 배경움직이기
         if (background)
             background.GetComponent<Background>().MoveBackground((transform.position.x - bepos.x) * Time.fixedDeltaTime);
         bepos = transform.position;

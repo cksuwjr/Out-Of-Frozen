@@ -5,7 +5,6 @@ using UnityEngine.Events;
 
 public class Hit : MonoBehaviour
 {
-    // 이벤트
     [Header("Events")]
     [Space]
     public UnityEvent OnHitEvent;
@@ -29,14 +28,13 @@ public class Hit : MonoBehaviour
 
     public void OnHit(GameObject attacker, int damage, bool isCritical = false, string attackInfo = "", int hitCount = 1)
     {
-        //Debug.Log($"{gameObject.name}가 {attacker.name}로부터 {damage}의 피해를 입었습니다.");
         if (GetComponent<Rat>() && attackInfo == "Fear")
         {
             GetComponent<Rat>().Hit(attacker);
             
         }
         else
-            Debug.Log($"{gameObject.name}가 {attacker.name}로부터 {damage}의 피해를 입었습니다.");
+            GetComponent<ObjectController>().GetHurt(1);
     }
     public bool isHitTarget()
     {
