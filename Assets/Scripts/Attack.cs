@@ -5,7 +5,6 @@ using UnityEngine.Events;
 
 public class Attack : MonoBehaviour
 {
-    // ¿Ã∫•∆Æ
     [Header("Events")]
     [Space]
     public UnityEvent OnAttackEvent;
