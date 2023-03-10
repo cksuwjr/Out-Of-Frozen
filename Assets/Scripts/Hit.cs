@@ -33,8 +33,12 @@ public class Hit : MonoBehaviour
             GetComponent<Rat>().Hit(attacker);
             
         }
+        else if(GetComponent<Bat>() && attackInfo == "Fear")
+        {
+            GetComponent<Bat>().Scared(attacker);
+        }
         else
-            GetComponent<ObjectController>().GetHurt(1);
+            GetComponent<ObjectController>().GetHurt(damage);
     }
     public bool isHitTarget()
     {

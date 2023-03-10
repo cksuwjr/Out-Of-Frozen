@@ -15,7 +15,7 @@ TagManager:
   - Mob
   - Player
   - Unbeatable
-  - 
+  - HitBox
   - 
   - 
   - 
@@ -39,6 +39,15 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: Background
+    uniqueID: 719290659
+    locked: 0
+  - name: Ground
+    uniqueID: 3419418789
+    locked: 0
+  - name: UI
+    uniqueID: 2395114305
+    locked: 0
   - name: Default
     uniqueID: 0
     locked: 0
