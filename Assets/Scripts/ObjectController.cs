@@ -10,7 +10,7 @@ public class ObjectController : MonoBehaviour
     [Range(0, .3f)] [SerializeField] private float MovementSmoothing = .05f;
 
 
-    [SerializeField] private LayerMask WhatIsGround;
+    [SerializeField] public LayerMask WhatIsGround;
     [SerializeField] private Transform GroundCheck;
 
     [SerializeField] private LayerMask WhoIsEnemy;
@@ -32,7 +32,9 @@ public class ObjectController : MonoBehaviour
     [Space]
 
     public UnityEvent OnLandEvent;
-    
+    public UnityEvent OnDieEvent;
+    public UnityEvent OnHurtEvent;
+
     [System.Serializable]
     public class BoolEvent : UnityEvent<bool> { }
 
@@ -43,11 +45,15 @@ public class ObjectController : MonoBehaviour
         anim = GetComponent<Animator>();
         if (OnLandEvent == null)
             OnLandEvent = new UnityEvent();
-
+        if (OnDieEvent == null)
+            OnDieEvent = new UnityEvent();
+        if (OnHurtEvent == null)
+            OnHurtEvent = new UnityEvent();
     }
 
     private void FixedUpdate()
     {
+        if (!GroundCheck) return;
         bool wasGrounded = isGround;
         isGround = false;
 
@@ -56,7 +62,16 @@ public class ObjectController : MonoBehaviour
         {
             isGround = true;
             if (!wasGrounded)
+            {
+                anim.SetBool("Jump", false);
                 OnLandEvent.Invoke();
+            }
+        }
+
+
+        if(rb.velocity.y < -12f)
+        {
+            rb.velocity = new Vector2(rb.velocity.x, -12f);
         }
     }
 
@@ -70,16 +85,28 @@ public class ObjectController : MonoBehaviour
         Vector3 targetVelocity = new Vector2(direction * speed, rb.velocity.y);
 
         if (direction != 0)
+        {
             this.direction = new Vector3(direction, 0);
+            anim.SetBool("Move", true);
+        }
+        else
+        {
+            anim.SetBool("Move", false);
+        }
         rb.velocity = Vector2.SmoothDamp(rb.velocity, targetVelocity, ref m_Velocity, MovementSmoothing);
+        
+        if(direction != 0)
+            transform.localScale = new Vector3(direction, 1, 1);
+        /*
         if (direction == 1)
             sr.flipX = false;
         else if (direction == -1)
             sr.flipX = true;
-
+        */
 
         if (isGround && jump)
         {
+            anim.SetBool("Jump", true);
             isGround = false;
             rb.velocity = new Vector2(rb.velocity.x, 0);
             rb.AddForce(new Vector2(0f, JumpForce));
@@ -88,16 +115,19 @@ public class ObjectController : MonoBehaviour
     public void Attack(Vector3 attackSize, Vector3 attackOffset, string attackDir = "Front", string CC = "None")
     {
         Vector3 attackPos = transform.position + attackOffset;
+        
         if (attackDir == "Front")
-            attackPos += new Vector3((((attackSize.x - 2) / 2) * direction.x), 0);
+            attackPos += new Vector3((((attackSize.x) / 2) * direction.x), 0);
         else if (attackDir == "Back")
-            attackPos -= new Vector3((((attackSize.x - 2) / 2) * direction.x), 0);
+            attackPos -= new Vector3((((attackSize.x) / 2) * direction.x), 0);
         else // Middle
             { }
+        
+        if (CC == "Fear")
+            anim.SetTrigger("Bark");
 
-        Debug.Log(direction);
-        Debug.Log(attackDir);
-        Collider2D[] colliders = Physics2D.OverlapBoxAll(attackPos, attackSize / 2, WhoIsEnemy);
+        
+        Collider2D[] colliders = Physics2D.OverlapBoxAll(attackPos, attackSize, 0, WhoIsEnemy);
         foreach(Collider2D i in colliders)
         {
             GameObject Deffender = i.gameObject;
@@ -118,64 +148,80 @@ public class ObjectController : MonoBehaviour
         }
     }
 
-    void StepOnObstacle()
+    public void StepOnObstacle(GameObject Target)
     {
+        StartCoroutine(Unbeatable(0.3f));
         rb.velocity = new Vector2(rb.velocity.x, 0);
-        rb.AddForce(new Vector2(0, 400f));
+        rb.AddForce(new Vector2(0, 450f));
+        Target.GetComponent<Hit>().OnHit(gameObject, stat.AttackPower, false, "None");
     }
-    private void OnCollisionEnter2D(Collision2D collision)
+    public void SteppedByObstacle(GameObject Target)
     {
-        if (gameObject.layer == LayerMask.NameToLayer("Unbeatable")) return;
+        if(tag == "Player")
+            StartCoroutine(Unbeatable(0.5f));
+        else
+            StartCoroutine(Unbeatable(0.3f));
+        GetHurt(Target.GetComponent<Status>().AttackPower);
+        int dir = Target.transform.position.x > transform.position.x ? 1 : -1;
 
-        GameObject Target = collision.gameObject;
-        
-        if (Target.layer == LayerMask.NameToLayer("Mob"))
+        if (dir != 0)
+            transform.localScale = new Vector3(dir, 1, 1);
+
+        Vector2.SmoothDamp(rb.velocity, new Vector2(-dir * 2.75f, 5), ref m_Velocity, MovementSmoothing);
+
+
+    }
+    
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.layer != LayerMask.NameToLayer("HitBox")) return; 
+        if (collision.gameObject.layer == LayerMask.NameToLayer("Unbeatable")) return;
+        if (!GetComponent<BoxCollider2D>()) return;
+
+        GameObject Target = collision.transform.parent.gameObject;
+
+        if (Target.layer == LayerMask.NameToLayer("Mob") && gameObject.layer == LayerMask.NameToLayer("Player"))
         {
             if (rb.velocity.y < 0 && transform.position.y > Target.transform.position.y && !isGround)
             {
-                StartCoroutine(Unbeatable(0.3f));
-                Target.GetComponent<Hit>().OnHit(gameObject, 1, false, "None");
-                //Target.GetComponent<ObjectController>().GetHurt(1);
-                StepOnObstacle();
+                StepOnObstacle(Target);
             }
             else
             {
-                StartCoroutine(Unbeatable(0.3f));
-                GetComponent<ObjectController>().GetHurt(1);
-                int dir = Target.transform.position.x > transform.position.x ? 1 : -1;
-
-                SpriteRenderer sr = GetComponent<SpriteRenderer>();
-                if (dir == 1)
-                    sr.flipX = false;
-                else if (dir == -1)
-                    sr.flipX = true;
-
-                rb.AddForce(new Vector2(-dir * 275f, 175f));
-                
-
+                SteppedByObstacle(Target);
             }
         }
     }
+    
     virtual public void GetHurt(int damage)
     {
         anim.SetTrigger("Hit");
 
         stat.Hp -= damage;
+        OnHurtEvent.Invoke();
         if (stat.Hp <= 0)
             Die();
     }
 
-    virtual public void Die()
+    public void Die()
     {
-
+        OnDieEvent.Invoke();        
+    }
+    virtual public void DieEvent()
+    {
         //Instantiate(gameObject, transform.position, Quaternion.identity);
         rb.constraints = RigidbodyConstraints2D.FreezePositionX;
         rb.velocity = Vector3.zero;
         rb.AddForce(new Vector2(0, 400f));
+        anim.SetTrigger("Hit");
         GetComponent<SpriteRenderer>().flipY = true;
-        GetComponent<BoxCollider2D>().isTrigger = true;
+
+        Destroy(GetComponent<BoxCollider2D>());
+        Destroy(transform.Find("Hitbox").gameObject);
         Destroy(GetComponent<Move>());
+        Destroy(GetComponent<Bat>());
         Destroy(gameObject, 2);
+        
     }
 
     // 무적

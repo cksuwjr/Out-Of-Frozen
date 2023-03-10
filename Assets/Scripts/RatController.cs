@@ -12,19 +12,24 @@ public class RatController : ObjectController
           
     }
 
-    public override void Die()
+    public override void DieEvent()
     {
         for (int i = 0; i < Spawncount; i++)
         {
             GameObject Spawned = Instantiate(Rat, transform.position, Quaternion.identity);
             int force = -FloatingRange + (((FloatingRange * 2) / Spawncount) * i);
-            SpriteRenderer sr = Spawned.GetComponent<SpriteRenderer>();
-            if (force > 0)
-                sr.flipX = false;
-            else 
-                sr.flipX = true;
 
-            Spawned.GetComponent<Rigidbody2D>().AddForce(new Vector2(force, 200f));
+            int direction;
+            if (force > 0)
+                direction = -1;
+            else
+                direction = 1;
+
+
+            if (direction != 0)
+                transform.localScale = new Vector3(direction, 1, 1);
+
+            Spawned.GetComponent<Rigidbody2D>().AddForce(new Vector2(force, Random.Range(100f, 300f)));
         }
         Destroy(gameObject);
     }
