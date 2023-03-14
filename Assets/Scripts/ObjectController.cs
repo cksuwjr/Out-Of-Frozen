@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
-
+using UnityEngine.UI;
 public class ObjectController : MonoBehaviour
 {
     [SerializeField] private float JumpForce = 400f;
@@ -27,6 +27,13 @@ public class ObjectController : MonoBehaviour
     public Vector2 direction = Vector2.zero;
     private Vector2 m_Velocity = Vector2.zero;
 
+    public bool Movable = true;
+
+    private int mylayer;
+    Coroutine UnbeatableCo;
+    [SerializeField] Image UnbeatableGage_Image;
+    int jumpstack = 0;
+    float UnbeatableTime = 0;
 
     [Header("Events")]
     [Space]
@@ -49,6 +56,7 @@ public class ObjectController : MonoBehaviour
             OnDieEvent = new UnityEvent();
         if (OnHurtEvent == null)
             OnHurtEvent = new UnityEvent();
+        mylayer = gameObject.layer;
     }
 
     private void FixedUpdate()
@@ -61,6 +69,7 @@ public class ObjectController : MonoBehaviour
         if (collider)
         {
             isGround = true;
+            jumpstack = 0;
             if (!wasGrounded)
             {
                 anim.SetBool("Jump", false);
@@ -83,27 +92,25 @@ public class ObjectController : MonoBehaviour
 
         }
         Vector3 targetVelocity = new Vector2(direction * speed, rb.velocity.y);
-
         if (direction != 0)
         {
             this.direction = new Vector3(direction, 0);
             anim.SetBool("Move", true);
+            if (speed >= 4)
+                anim.SetBool("Run", true);
+            else
+                anim.SetBool("Run", false);
         }
         else
         {
             anim.SetBool("Move", false);
+            anim.SetBool("Run", false);
         }
         rb.velocity = Vector2.SmoothDamp(rb.velocity, targetVelocity, ref m_Velocity, MovementSmoothing);
         
         if(direction != 0)
-            transform.localScale = new Vector3(direction, 1, 1);
-        /*
-        if (direction == 1)
-            sr.flipX = false;
-        else if (direction == -1)
-            sr.flipX = true;
-        */
-
+            SetDirection(direction);
+        
         if (isGround && jump)
         {
             anim.SetBool("Jump", true);
@@ -150,50 +157,50 @@ public class ObjectController : MonoBehaviour
 
     public void StepOnObstacle(GameObject Target)
     {
-        StartCoroutine(Unbeatable(0.3f));
+        anim.SetTrigger("Hit");
+        if (UnbeatableTime <= 0.3f * jumpstack)
+        {
+            jumpstack += 1;
+            GetHeal(jumpstack * 0.08f);
+            if (UnbeatableCo != null)
+                StopCoroutine(UnbeatableCo);
+            UnbeatableCo = StartCoroutine("Unbeatable", 0.3f * jumpstack);
+        }
         rb.velocity = new Vector2(rb.velocity.x, 0);
-        rb.AddForce(new Vector2(0, 450f));
+        rb.AddForce(new Vector2(0, 400f));
         Target.GetComponent<Hit>().OnHit(gameObject, stat.AttackPower, false, "None");
     }
     public void SteppedByObstacle(GameObject Target)
     {
-        if(tag == "Player")
-            StartCoroutine(Unbeatable(0.5f));
+        if (UnbeatableCo != null)
+            StopCoroutine(UnbeatableCo);
+
+        if (tag == "Player")
+            UnbeatableCo = StartCoroutine("Unbeatable",0.5f);
         else
-            StartCoroutine(Unbeatable(0.3f));
+            UnbeatableCo = StartCoroutine("Unbeatable",0.3f);
         GetHurt(Target.GetComponent<Status>().AttackPower);
         int dir = Target.transform.position.x > transform.position.x ? 1 : -1;
 
         if (dir != 0)
-            transform.localScale = new Vector3(dir, 1, 1);
+            SetDirection(dir);
 
-        Vector2.SmoothDamp(rb.velocity, new Vector2(-dir * 2.75f, 5), ref m_Velocity, MovementSmoothing);
+        rb.AddForce(new Vector2(-dir * 10, 150f));
+        Vector2.SmoothDamp(rb.velocity, new Vector2(-dir * 155f, 5), ref m_Velocity, MovementSmoothing);
 
 
     }
-    
-    private void OnTriggerEnter2D(Collider2D collision)
+    public void SetDirection(float dir)
     {
-        if (collision.gameObject.layer != LayerMask.NameToLayer("HitBox")) return; 
-        if (collision.gameObject.layer == LayerMask.NameToLayer("Unbeatable")) return;
-        if (!GetComponent<BoxCollider2D>()) return;
-
-        GameObject Target = collision.transform.parent.gameObject;
-
-        if (Target.layer == LayerMask.NameToLayer("Mob") && gameObject.layer == LayerMask.NameToLayer("Player"))
+        transform.localScale = new Vector3(dir, 1, 1);
+        if (UnbeatableGage_Image)
         {
-            if (rb.velocity.y < 0 && transform.position.y > Target.transform.position.y && !isGround)
-            {
-                StepOnObstacle(Target);
-            }
-            else
-            {
-                SteppedByObstacle(Target);
-            }
+            UnbeatableGage_Image.transform.parent.localScale = new Vector3(dir, 1, 1);
         }
+
     }
-    
-    virtual public void GetHurt(int damage)
+
+    virtual public void GetHurt(float damage)
     {
         anim.SetTrigger("Hit");
 
@@ -202,7 +209,14 @@ public class ObjectController : MonoBehaviour
         if (stat.Hp <= 0)
             Die();
     }
-
+    virtual public void GetHeal(float value)
+    {
+        if ((stat.Hp + value) <= stat.MaxHp)
+            stat.Hp += value;
+        else
+            stat.Hp = stat.MaxHp;
+        OnHurtEvent.Invoke();
+    }
     public void Die()
     {
         OnDieEvent.Invoke();        
@@ -227,11 +241,30 @@ public class ObjectController : MonoBehaviour
     // 무적
     IEnumerator Unbeatable(float time)
     {
-        LayerMask layer = gameObject.layer;
         gameObject.layer = LayerMask.NameToLayer("Unbeatable");
-        yield return new WaitForSeconds(time);
-        gameObject.layer = layer;
+        UnbeatableTime = time;
+        while (UnbeatableTime > 0)
+        {
+            UnbeatableTime -= Time.fixedDeltaTime;
+            if (UnbeatableGage_Image)
+                UnbeatableGage_Image.fillAmount = UnbeatableTime / time;
+            yield return new WaitForSeconds(Time.fixedDeltaTime);
+        }
+        gameObject.layer = mylayer;
     }
+
+    public void Ouch()
+    {
+        StopCoroutine("SetUnMovable");
+        StartCoroutine("SetUnMovable",0.15f);
+    }
+    IEnumerator SetUnMovable(float time)
+    {
+        Movable = false;
+        yield return new WaitForSeconds(time);
+        Movable = true;
+    }
+
 
     /*
     private void OnDrawGizmos()
