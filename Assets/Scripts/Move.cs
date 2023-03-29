@@ -25,17 +25,26 @@ public class Move : MonoBehaviour
         {
             Jump = true;
         }
-        if (Input.GetKey(KeyCode.R))
+        if (Input.GetKeyDown(KeyCode.R))
         {
             Run = true;
+        }
+        if (Input.GetKeyUp(KeyCode.R))
+        {
+            Run = false;
+        }
+        if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            Rigidbody2D rb = GetComponent<Rigidbody2D>();
+            rb.velocity = new Vector3(rb.velocity.x, -12, 0);
         }
     }
     private void FixedUpdate()
     {
-        if (!Run)
-            controller.Move(MoveDir, Speed, Jump);
-        else
+        if (Run)
             controller.Move(MoveDir, RunSpeed, Jump);
+        else
+            controller.Move(MoveDir, Speed, Jump);
         GameObject background = GameObject.FindGameObjectWithTag("Background");
 
 
@@ -45,6 +54,6 @@ public class Move : MonoBehaviour
         
 
         Jump = false;
-        Run = false;
+        //Run = false;
     }
 }

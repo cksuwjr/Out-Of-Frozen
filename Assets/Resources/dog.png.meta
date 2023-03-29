@@ -41,6 +41,12 @@ TextureImporter:
   - first:
       213: 7923082762766684019
     second: dog_12
+  - first:
+      213: -9029403309599034968
+    second: dog_13
+  - first:
+      213: 2803988006505525306
+    second: dog_14
   externalObjects: {}
   serializedVersion: 11
   mipmaps:
@@ -398,6 +404,48 @@ TextureImporter:
       bones: []
       spriteID: 37f8ab06bc174fd60800000000000000
       internalID: 7923082762766684019
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dog_13
+      rect:
+        serializedVersion: 2
+        x: 832
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8a1fc9d978d11b280800000000000000
+      internalID: -9029403309599034968
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dog_14
+      rect:
+        serializedVersion: 2
+        x: 896
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a30b73a5c34c9e620800000000000000
+      internalID: 2803988006505525306
       vertices: []
       indices: 
       edges: []
