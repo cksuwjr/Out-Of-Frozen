@@ -237,7 +237,7 @@ MonoBehaviour:
   GroundCheck: {fileID: 0}
   WhoIsEnemy:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 128
   stat: {fileID: 3536954176228638261}
   isGround: 0
   direction: {x: 0, y: 0}
@@ -361,7 +361,7 @@ MonoBehaviour:
   m_LightType: 2
   m_BlendStyleIndex: 0
   m_FalloffIntensity: 0.5
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.6415094, g: 0.6415094, b: 0.6415094, a: 1}
   m_Intensity: 5
   m_LightVolumeOpacity: 0
   m_ApplyToSortingLayers: 2381df2a

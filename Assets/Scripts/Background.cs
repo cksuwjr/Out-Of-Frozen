@@ -9,6 +9,7 @@ public class Background : MonoBehaviour
     {
         Fixed,
         CAMAttached,
+        OutoMove,
     }
 
     private Renderer render;
@@ -19,14 +20,22 @@ public class Background : MonoBehaviour
     void Start()
     {
         render = GetComponent<Renderer>();
-        if (transform.parent.tag == "MainCamera")
-            type = Type.CAMAttached;
+        //if (transform.parent.tag == "MainCamera")
+        //    type = Type.CAMAttached;
     }
-
+    private void FixedUpdate()
+    {
+        if (type == Type.OutoMove)
+        {
+            offset += Speed * Time.fixedDeltaTime;
+            render.material.mainTextureOffset = new Vector2(offset, 0);
+        }
+    }
     // Update is called once per frame
     public void MoveBackground(float x)
     {
         if (type == Type.Fixed) return;
+        if (type == Type.OutoMove) return;
         if (type == Type.CAMAttached)
         {
             offset += x * Speed;

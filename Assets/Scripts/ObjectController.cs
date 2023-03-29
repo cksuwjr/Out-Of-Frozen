@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+[RequireComponent(typeof(Status))]
+[RequireComponent(typeof(Rigidbody2D))]
+
+
 public class ObjectController : MonoBehaviour
 {
     [SerializeField] private float JumpForce = 400f;
@@ -17,15 +21,12 @@ public class ObjectController : MonoBehaviour
 
     [SerializeField] private Status stat;
 
-    const float GroundedRadius = .2f;
     public bool isGround;
 
     private Rigidbody2D rb;
-    private SpriteRenderer sr;
     private Animator anim;
 
     public Vector2 direction = Vector2.zero;
-    private Vector2 m_Velocity = Vector2.zero;
 
     public bool Movable = true;
 
@@ -48,7 +49,6 @@ public class ObjectController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        sr = GetComponent<SpriteRenderer>();
         anim = GetComponent<Animator>();
         if (OnLandEvent == null)
             OnLandEvent = new UnityEvent();
@@ -65,8 +65,9 @@ public class ObjectController : MonoBehaviour
         bool wasGrounded = isGround;
         isGround = false;
 
-        Collider2D collider = Physics2D.OverlapCircle(GroundCheck.position, GroundedRadius, WhatIsGround);
-        if (collider)
+        
+        Collider2D collider = Physics2D.OverlapBox(GroundCheck.position, GroundCheck.localScale, 0, WhatIsGround);
+        if (collider && rb.velocity.y <= 0.5f)
         {
             isGround = true;
             jumpstack = 0;
@@ -74,6 +75,13 @@ public class ObjectController : MonoBehaviour
             {
                 anim.SetBool("Jump", false);
                 OnLandEvent.Invoke();
+            }
+        }
+        else
+        {
+            if (!wasGrounded)
+            {
+                anim.SetBool("Jump", true);
             }
         }
 
@@ -86,17 +94,22 @@ public class ObjectController : MonoBehaviour
 
     public void Move(float direction, float speed, bool jump)
     {
+        Debug.Log(direction + "/" + speed + "/");
         
         if (isGround)
         {
-
+            OnLandEvent.Invoke();
         }
+        if (direction == 0)
+            rb.constraints = RigidbodyConstraints2D.FreezeRotation | RigidbodyConstraints2D.FreezePositionX;
+        else
+            rb.constraints = RigidbodyConstraints2D.FreezeRotation;
         Vector3 targetVelocity = new Vector2(direction * speed, rb.velocity.y);
         if (direction != 0)
         {
             this.direction = new Vector3(direction, 0);
             anim.SetBool("Move", true);
-            if (speed >= 4)
+            if (speed >= 4 && isGround)
                 anim.SetBool("Run", true);
             else
                 anim.SetBool("Run", false);
@@ -106,6 +119,7 @@ public class ObjectController : MonoBehaviour
             anim.SetBool("Move", false);
             anim.SetBool("Run", false);
         }
+        Vector2 m_Velocity = Vector2.zero;
         rb.velocity = Vector2.SmoothDamp(rb.velocity, targetVelocity, ref m_Velocity, MovementSmoothing);
         
         if(direction != 0)
@@ -114,9 +128,13 @@ public class ObjectController : MonoBehaviour
         if (isGround && jump)
         {
             anim.SetBool("Jump", true);
+            anim.SetTrigger("Jumpt");
             isGround = false;
             rb.velocity = new Vector2(rb.velocity.x, 0);
-            rb.AddForce(new Vector2(0f, JumpForce));
+            if(speed >= 4)
+                rb.AddForce(new Vector2(0f, JumpForce + 50f));
+            else
+                rb.AddForce(new Vector2(0f, JumpForce));
         }
     }
     public void Attack(Vector3 attackSize, Vector3 attackOffset, string attackDir = "Front", string CC = "None")
@@ -186,13 +204,15 @@ public class ObjectController : MonoBehaviour
             SetDirection(dir);
 
         rb.AddForce(new Vector2(-dir * 10, 150f));
+
+        Vector2 m_Velocity = Vector2.zero;
         Vector2.SmoothDamp(rb.velocity, new Vector2(-dir * 155f, 5), ref m_Velocity, MovementSmoothing);
 
 
     }
     public void SetDirection(float dir)
     {
-        transform.localScale = new Vector3(dir, 1, 1);
+        transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x) * dir, transform.localScale.y, transform.localScale.z);
         if (UnbeatableGage_Image)
         {
             UnbeatableGage_Image.transform.parent.localScale = new Vector3(dir, 1, 1);
