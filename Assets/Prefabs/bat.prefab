@@ -25,12 +25,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3536954174854139768}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3536954176228638264}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!61 &3536954174854139771
 BoxCollider2D:
@@ -42,6 +43,25 @@ BoxCollider2D:
   m_Enabled: 1
   m_Density: 1
   m_Material: {fileID: 6200000, guid: 7ae4c3b976aa30142aa26c888a03c94d, type: 2}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
@@ -89,6 +109,7 @@ GameObject:
   - component: {fileID: 3536954176228638261}
   - component: {fileID: 8415438895660338358}
   - component: {fileID: -4350138469075633616}
+  - component: {fileID: -2546606659431005209}
   m_Layer: 6
   m_Name: bat
   m_TagString: Untagged
@@ -103,13 +124,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3536954176228638269}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -4.69, y: 0.829275, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3536954174854139769}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &3536954176228638271
 SpriteRenderer:
@@ -122,6 +144,7 @@ SpriteRenderer:
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -164,7 +187,7 @@ SpriteRenderer:
   m_SpriteSortPoint: 0
 --- !u!95 &3536954176228638270
 Animator:
-  serializedVersion: 3
+  serializedVersion: 5
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -177,10 +200,12 @@ Animator:
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorControllerStateOnDisable: 0
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!114 &3536954176228638266
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -193,9 +218,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 79d46785752e6a342a994cc7e52cdc33, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Speed: 5
-  X_minmax: {x: -5, y: 5}
-  Y_minmax: {x: 0, y: 2}
 --- !u!50 &3536954176228638265
 Rigidbody2D:
   serializedVersion: 4
@@ -213,6 +235,12 @@ Rigidbody2D:
   m_AngularDrag: 0.05
   m_GravityScale: 0
   m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 0
@@ -231,27 +259,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   JumpForce: 400
   MovementSmoothing: 0.05
-  WhatIsGround:
-    serializedVersion: 2
-    m_Bits: 0
   GroundCheck: {fileID: 0}
   WhoIsEnemy:
     serializedVersion: 2
     m_Bits: 128
   stat: {fileID: 3536954176228638261}
+  WhatIsGround:
+    serializedVersion: 2
+    m_Bits: 0
   isGround: 0
   direction: {x: 0, y: 0}
   Movable: 1
-  UnbeatableGage_Image: {fileID: 0}
+  Jumpable: 1
+  invincible_Image: {fileID: 0}
+  invincibleTime: 0
+  die: 0
+  isSlope: 0
   OnLandEvent:
     m_PersistentCalls:
       m_Calls: []
   OnDieEvent:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 3536954176228638267}
-        m_TargetAssemblyTypeName: ObjectController, Assembly-CSharp
-        m_MethodName: DieEvent
+      - m_Target: {fileID: 3536954176228638266}
+        m_TargetAssemblyTypeName: Creature, Assembly-CSharp
+        m_MethodName: Die
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -263,19 +295,7 @@ MonoBehaviour:
         m_CallState: 2
   OnHurtEvent:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 3536954176228638266}
-        m_TargetAssemblyTypeName: Bat, Assembly-CSharp
-        m_MethodName: Hitted
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!61 &3536954176228638260
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -286,6 +306,25 @@ BoxCollider2D:
   m_Enabled: 1
   m_Density: 1
   m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
@@ -332,6 +371,8 @@ MonoBehaviour:
   _MaxHp: 2
   _Hp: 2
   _AttackPower: 3
+  _Tenasious: 0
+  _Speed: 3
 --- !u!114 &8415438895660338358
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -358,25 +399,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 073797afb82c5a1438f328866b10b3f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_ComponentVersion: 1
   m_LightType: 2
   m_BlendStyleIndex: 0
   m_FalloffIntensity: 0.5
   m_Color: {r: 0.6415094, g: 0.6415094, b: 0.6415094, a: 1}
   m_Intensity: 5
-  m_LightVolumeOpacity: 0
+  m_LightVolumeIntensity: 0
+  m_LightVolumeIntensityEnabled: 0
   m_ApplyToSortingLayers: 2381df2a
   m_LightCookieSprite: {fileID: -697763020151794088, guid: 085cc050021f2a448bd5f20f311a3d7e, type: 3}
-  m_UseNormalMap: 0
+  m_DeprecatedPointLightCookieSprite: {fileID: -697763020151794088, guid: 085cc050021f2a448bd5f20f311a3d7e, type: 3}
   m_LightOrder: 0
   m_AlphaBlendOnOverlap: 0
+  m_OverlapOperation: 0
+  m_NormalMapDistance: 3
+  m_NormalMapQuality: 2
+  m_UseNormalMap: 0
+  m_ShadowIntensityEnabled: 0
   m_ShadowIntensity: 0
+  m_ShadowVolumeIntensityEnabled: 0
   m_ShadowVolumeIntensity: 0
+  m_LocalBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   m_PointLightInnerAngle: 360
   m_PointLightOuterAngle: 360
   m_PointLightInnerRadius: 0
   m_PointLightOuterRadius: 1
-  m_PointLightDistance: 3
-  m_PointLightQuality: 1
   m_ShapeLightParametricSides: 5
   m_ShapeLightParametricAngleOffset: 0
   m_ShapeLightParametricRadius: 1
@@ -387,3 +437,20 @@ MonoBehaviour:
   - {x: 0.5, y: -0.5, z: 0}
   - {x: 0.5, y: 0.5, z: 0}
   - {x: -0.5, y: 0.5, z: 0}
+--- !u!114 &-2546606659431005209
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3536954176228638269}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 741e4b4b2cd14b8458d6dbe9856987b1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  UnderCheck: {fileID: 0}
+  FrontCheck: {fileID: 0}
+  NowAct: 
+  X_minmax: {x: 0, y: 0}
+  Y_minmax: {x: 0, y: 0}

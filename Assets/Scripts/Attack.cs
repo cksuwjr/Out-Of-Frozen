@@ -21,7 +21,7 @@ public class Attack : MonoBehaviour
 
 
 
-    public ObjectController controller;
+    ObjectController controller;
     string attack = "";
     void Start()
     {

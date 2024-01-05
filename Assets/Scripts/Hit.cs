@@ -28,17 +28,8 @@ public class Hit : MonoBehaviour
 
     public void OnHit(GameObject attacker, int damage, bool isCritical = false, string attackInfo = "", int hitCount = 1)
     {
-        if (GetComponent<MonsterAI>() && attackInfo == "Fear")
-        {
-            GetComponent<MonsterAI>().Hit(attacker);
-            
-        }
-        else if(GetComponent<Bat>() && attackInfo == "Fear")
-        {
-            GetComponent<Bat>().Scared(attacker);
-        }
-        else
-            GetComponent<ObjectController>().GetHurt(damage);
+        GetComponent<ObjectController>().GetHurt(damage);
+        OnHitEvent.Invoke();
     }
     public bool isHitTarget()
     {

@@ -4,16 +4,13 @@ using UnityEngine;
 
 public class MonsterAI : MonoBehaviour
 {
-    private ObjectController controller;
+    protected ObjectController controller;
 
-    int dir = -1;
+    protected int dir = -1;
     
-    [SerializeField] float Speed = 5f;
-    [SerializeField] float Tenasious = 0f;
-    [SerializeField] bool Jumpable = true;
-    private Rigidbody2D rb;
-    private Animator anim;
-
+    protected Rigidbody2D rb;
+    protected Animator anim;
+    protected Status status;
 
     [SerializeField] Transform UnderCheck;
     [SerializeField] Transform FrontCheck;
@@ -21,62 +18,102 @@ public class MonsterAI : MonoBehaviour
     Dictionary<string, float> act = new Dictionary<string, float>();
     public string NowAct = "";
 
-
-    private void StateRegister()
+    public void AddAct(string stateName, float percentage)
+    {
+        act.Add(stateName, percentage);
+    }
+    protected virtual void StateRegister()
     {
         // 상태추가
-        act.Add("Go", 55f);
-        act.Add("GoAnother", 30f);
-        act.Add("Stop", 5f);
-        act.Add("StopJump", 5f);
-        act.Add("GoJump", 5f);
+        AddAct("Go", 55f);
+        AddAct("GoAnother", 30f);
+        AddAct("Stop", 5f);
+        AddAct("StopJump", 5f);
+        AddAct("GoJump", 5f);
     }
 
-    private void Start()
+    protected void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+        status = GetComponent<Status>();
         controller = GetComponent<ObjectController>();
 
         StateRegister();
-        
-        InvokeRepeating("Pattern", 0, 3);
+
+        StartCoroutine("Act");
+        InvokeRepeating("ChangeAct", Random.Range(0.01f,0.05f), 3);
     }
-    void Update()
+    public void ChangeAct()
     {
+        NowAct = SelectAct();
+    }
+    public void ObstacleCheck()
+    {
+        if (controller.isSlope) return;
         if (!UnderCheck) return;
+
         Collider2D collider = Physics2D.OverlapCircle(UnderCheck.position, .1f, controller.WhatIsGround);
 
-        if (!collider && controller.isGround)
+        if (!controller.isSlope)
         {
-            Pattern("GoAnother");
+            if (!collider && controller.isGround)
+                NowAct = "GoAnother";
+            collider = Physics2D.OverlapCircle(FrontCheck.position, .1f, controller.WhatIsGround);
+            if (collider && controller.isGround)
+                NowAct = "GoAnother";
         }
-        collider = Physics2D.OverlapCircle(FrontCheck.position, .1f, controller.WhatIsGround);
-        if (collider && controller.isGround)
-        {
-            Pattern("GoAnother");
-        }
-
     }
-    
-    
+    IEnumerator Act()
+    {
+        bool Rest = false;
+        while (!Rest)
+        {
+            ObstacleCheck();
 
-    
-    public void Pattern()
+            if (controller.Movable)
+            {
+                if (NowAct == "Go")
+                    controller.Move(dir, status.Speed, false);
+                else if (NowAct == "GoAnother")
+                {
+                    dir *= -1;
+                    controller.Move(dir, status.Speed, false);
+                    NowAct = "Go";
+                }
+                else if (NowAct == "Stop")
+                {
+                    Rest = true;
+                    rb.velocity = new Vector2(0, rb.velocity.y);
+                    controller.Move(0, 0, false);
+                    StartCoroutine("Rest", 3);
+                }
+                else if (NowAct == "StopJump")
+                {
+                    rb.velocity = new Vector2(0, rb.velocity.y);
+                    controller.Move(0, 0, true);
+                    NowAct = "Stop";
+                }
+                else if (NowAct == "GoJump")
+                {
+                    controller.Move(dir, status.Speed, true);
+                    NowAct = "Stop";
+                }
+                else if (NowAct == "Hit")
+                {
+                    NowAct = "Wait";
+                }
+            }
+            yield return null;
+        }
+    }
+    IEnumerator Rest(float time)
     {
         StopCoroutine("Act");
-        NowAct = SelectAct();
+        yield return new WaitForSeconds(time);
         StartCoroutine("Act");
     }
-    public void Pattern(string what = "")
-    {
-        StopCoroutine("Act");
-        if (what == "")
-            NowAct = SelectAct();
-        else
-            NowAct = what;
-        StartCoroutine("Act");
-    }
+    
     string SelectAct()
     {
         float total = 0;
@@ -118,70 +155,12 @@ public class MonsterAI : MonoBehaviour
         return Act;
     }
 
-    IEnumerator Act()
+    public virtual void Hit(GameObject FromWho)
     {
-        switch (NowAct)
-        {
-            case "Go":
-                {
-                    bool jump = false;
-                    while (true)
-                    {
-                        controller.Move(dir, Speed, jump);
-                        yield return new WaitForSeconds(Time.fixedDeltaTime);
-                    }
-                }
-            case "GoAnother":
-                {
-                    dir *= -1;
+        Debug.Log("아야");
+        CancelInvoke("ChangeAct");
+        NowAct = "Hit";
 
-                    bool jump = false;
-                    while (true)
-                    {
-                        controller.Move(dir, Speed, jump);
-                        yield return new WaitForSeconds(Time.fixedDeltaTime);
-                    }
-                }
-            case "Stop":
-                {
-                    bool jump = false;
-                    while (true)
-                    {
-                        controller.Move(0, 0, jump);
-                        yield return new WaitForSeconds(Time.fixedDeltaTime);
-                    }
-                }
-            case "StopJump":
-                {
-                    if (!Jumpable) break;
-                    bool jump = true;
-                    while (true)
-                    {
-                        controller.Move(0, 0, jump);
-                        yield return new WaitForSeconds(Time.fixedDeltaTime);
-                        Pattern();
-                    }
-                }
-            case "GoJump":
-                {
-                    if (!Jumpable) break;
-
-                    bool jump = true;
-                    while (true)
-                    {
-                        controller.Move(dir, Speed, jump);
-                        yield return new WaitForSeconds(Time.fixedDeltaTime);
-                        Pattern();
-
-                    }
-                }
-
-        }
-    }
-    public void Hit(GameObject FromWho)
-    {
-        CancelInvoke("Pattern");
-        StopCoroutine("Act");
         rb.velocity = Vector2.zero;
 
         if (FromWho)
@@ -195,11 +174,12 @@ public class MonsterAI : MonoBehaviour
         }
 
         anim.SetTrigger("Hit");
-        float stuntime = 1f * (1-Tenasious);
+        float stuntime = 1f * (1-controller.stat.Tenasious);
         GetComponent<EffectSpawner>().Spawn("Fear", stuntime);
 
-        InvokeRepeating("Pattern", stuntime, 3);
+        InvokeRepeating("ChangeAct", stuntime, 3);
+
         //Invoke("Pattern", stuntime);       
     }
-    
+
 }

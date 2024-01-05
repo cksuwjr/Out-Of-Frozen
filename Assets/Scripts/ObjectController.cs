@@ -9,32 +9,46 @@ using UnityEngine.UI;
 
 public class ObjectController : MonoBehaviour
 {
+    // private
+    private Rigidbody2D rb;
+    private Animator anim;
+
     [SerializeField] private float JumpForce = 400f;
 
     [Range(0, .3f)] [SerializeField] private float MovementSmoothing = .05f;
 
 
-    [SerializeField] public LayerMask WhatIsGround;
     [SerializeField] private Transform GroundCheck;
-
     [SerializeField] private LayerMask WhoIsEnemy;
 
-    [SerializeField] private Status stat;
+    // public
+    public Status stat;
+
+    [SerializeField] public LayerMask WhatIsGround;
 
     public bool isGround;
+    // public use
 
-    private Rigidbody2D rb;
-    private Animator anim;
 
     public Vector2 direction = Vector2.zero;
 
     public bool Movable = true;
+    public bool Jumpable = true;
 
     private int mylayer;
-    Coroutine UnbeatableCo;
-    [SerializeField] Image UnbeatableGage_Image;
-    int jumpstack = 0;
-    float UnbeatableTime = 0;
+    Coroutine invincibility_Coroutine;
+    [SerializeField] Image invincible_Image;
+    public float invincibleTime = 0;
+
+    public bool die = false;
+
+    // 경사로 처리
+
+    public bool isSlope = false;
+    Vector2 perp = Vector2.zero;
+
+
+
 
     [Header("Events")]
     [Space]
@@ -62,39 +76,106 @@ public class ObjectController : MonoBehaviour
     private void FixedUpdate()
     {
         if (!GroundCheck) return;
+        FallSpeedCheck();
+        SlopCheck();
+        JumpCheck();
+
+        //Debug.Log(isGround);
+    }
+
+    // ============================= Checking(Update) =================================
+    private void JumpCheck()
+    {
         bool wasGrounded = isGround;
         isGround = false;
 
-        
+
         Collider2D collider = Physics2D.OverlapBox(GroundCheck.position, GroundCheck.localScale, 0, WhatIsGround);
-        if (collider && rb.velocity.y <= 0.5f)
+
+        if (isSlope)
         {
-            isGround = true;
-            jumpstack = 0;
-            if (!wasGrounded)
+            if (collider)
             {
-                anim.SetBool("Jump", false);
-                OnLandEvent.Invoke();
+                isGround = true;
+                if (!wasGrounded)
+                {
+                    anim.SetBool("Jump", false);
+                    OnLandEvent.Invoke();
+                }
+            }
+            else
+            {
+                isGround = false;
+                if (!wasGrounded)
+                    anim.SetBool("Jump", true);
             }
         }
         else
         {
-            if (!wasGrounded)
+            if (collider && rb.velocity.y <= 0.5f)
             {
-                anim.SetBool("Jump", true);
+                isGround = true;
+                if (!wasGrounded)
+                {
+                    anim.SetBool("Jump", false);
+                    OnLandEvent.Invoke();
+                }
+            }
+            else
+            {
+                if (!wasGrounded)
+                    anim.SetBool("Jump", true);
             }
         }
 
-
-        if(rb.velocity.y < -12f)
-        {
-            rb.velocity = new Vector2(rb.velocity.x, -12f);
-        }
     }
+    private void FallSpeedCheck()
+    {
+        if(rb.velocity.y < -12f)
+            rb.velocity = new Vector2(rb.velocity.x, -12f);
+    }
+    
+    private void SlopCheck()
+    {
+        Vector3 pos = transform.position;
+        BoxCollider2D boxCollider = GetComponent<BoxCollider2D>();
+        if (boxCollider)
+        {
+            pos += new Vector3(boxCollider.offset.x * transform.localScale.y, boxCollider.offset.y * transform.localScale.y);
+            pos += new Vector3(boxCollider.size.x * 0.5f * direction.x * transform.localScale.y, 0);
+        }
+        RaycastHit2D hit = Physics2D.Raycast(pos, Vector2.down, 1f, WhatIsGround);
+        Vector2 n = Vector2.Perpendicular(hit.normal);
+        float angle = Vector2.Angle(hit.normal, Vector2.up);
 
+
+
+        if (angle == 0)
+        {
+            pos = transform.position;
+            pos -= new Vector3(0.4f * direction.x, 0);
+            hit = Physics2D.Raycast(pos, Vector2.down, 1f, WhatIsGround);
+            angle = Vector2.Angle(hit.normal, Vector2.up);
+            n = Vector2.Perpendicular(hit.normal);
+            if (angle == 0)
+                isSlope = false;
+            
+        }
+        else
+        {
+            isSlope = true;
+            perp = n;
+        }
+
+        //Debug.Log("a" + hit.point);
+        //Debug.Log("b" + hit.normal);
+        Debug.DrawLine(hit.point, hit.point + hit.normal, Color.red);
+        Debug.DrawLine(hit.point, hit.point + n, Color.green);
+    }
+    /// =========================================================================================================================
     public void Move(float direction, float speed, bool jump)
     {
-        Debug.Log(direction + "/" + speed + "/");
+        //Debug.Log(direction + "/" + speed + "/");
         
         if (isGround)
         {
@@ -105,6 +186,16 @@ public class ObjectController : MonoBehaviour
         else
             rb.constraints = RigidbodyConstraints2D.FreezeRotation;
         Vector3 targetVelocity = new Vector2(direction * speed, rb.velocity.y);
+        if (isSlope)
+        {
+            float targetx;
+            float targety = (perp.y / 4f) * -direction * rb.gravityScale * (speed + 1);
+            if (targety > 0)
+                targetx = -perp.x * direction * speed * rb.gravityScale * 0.5f; // speed = 2.5f
+            else
+                targetx = direction * (0.1f * speed) * rb.gravityScale;
+            targetVelocity = new Vector2(targetx, targety);
+;       }
         if (direction != 0)
         {
             this.direction = new Vector3(direction, 0);
@@ -119,22 +210,32 @@ public class ObjectController : MonoBehaviour
             anim.SetBool("Move", false);
             anim.SetBool("Run", false);
         }
+
         Vector2 m_Velocity = Vector2.zero;
         rb.velocity = Vector2.SmoothDamp(rb.velocity, targetVelocity, ref m_Velocity, MovementSmoothing);
+
+        if (isGround && isSlope && targetVelocity.y > 0)
+        {
+            rb.MovePosition(rb.position + new Vector2(targetVelocity.x, targetVelocity.y) * Time.fixedDeltaTime);
+            rb.velocity = new Vector2(rb.velocity.x, 0);
+            isGround = false;
+        }
         
         if(direction != 0)
             SetDirection(direction);
         
-        if (isGround && jump)
+        if (isGround && jump && Jumpable)
         {
             anim.SetBool("Jump", true);
             anim.SetTrigger("Jumpt");
             isGround = false;
             rb.velocity = new Vector2(rb.velocity.x, 0);
-            if(speed >= 4)
-                rb.AddForce(new Vector2(0f, JumpForce + 50f));
-            else
-                rb.AddForce(new Vector2(0f, JumpForce));
+
+            float jumpforce = JumpForce;
+            if (speed >= 4) jumpforce += 50f;
+            if (isSlope) jumpforce *= 1.2f;
+            rb.velocity = new Vector2(rb.velocity.x, 0);
+            rb.AddForce(new Vector2(0f, jumpforce));
         }
     }
     public void Attack(Vector3 attackSize, Vector3 attackOffset, string attackDir = "Front", string CC = "None")
@@ -165,6 +266,8 @@ public class ObjectController : MonoBehaviour
                     if (isHitted.isHitTarget())
                     {
                         int damage = iAttacked.CalcDamage(gameObject, Deffender, 1);
+                        if (CC == "Fear")
+                            damage = 0;
                         isHitted.OnHit(gameObject, damage, false, CC);
                     }
                 }
@@ -173,49 +276,14 @@ public class ObjectController : MonoBehaviour
         }
     }
 
-    public void StepOnObstacle(GameObject Target)
-    {
-        anim.SetTrigger("Hit");
-        if (UnbeatableTime <= 0.3f * jumpstack)
-        {
-            jumpstack += 1;
-            GetHeal(jumpstack * 0.08f);
-            if (UnbeatableCo != null)
-                StopCoroutine(UnbeatableCo);
-            UnbeatableCo = StartCoroutine("Unbeatable", 0.3f * jumpstack);
-        }
-        rb.velocity = new Vector2(rb.velocity.x, 0);
-        rb.AddForce(new Vector2(0, 400f));
-        Target.GetComponent<Hit>().OnHit(gameObject, stat.AttackPower, false, "None");
-    }
-    public void SteppedByObstacle(GameObject Target)
-    {
-        if (UnbeatableCo != null)
-            StopCoroutine(UnbeatableCo);
-
-        if (tag == "Player")
-            UnbeatableCo = StartCoroutine("Unbeatable",0.5f);
-        else
-            UnbeatableCo = StartCoroutine("Unbeatable",0.3f);
-        GetHurt(Target.GetComponent<Status>().AttackPower);
-        int dir = Target.transform.position.x > transform.position.x ? 1 : -1;
-
-        if (dir != 0)
-            SetDirection(dir);
-
-        rb.AddForce(new Vector2(-dir * 10, 150f));
-
-        Vector2 m_Velocity = Vector2.zero;
-        Vector2.SmoothDamp(rb.velocity, new Vector2(-dir * 155f, 5), ref m_Velocity, MovementSmoothing);
-
-
-    }
+    
+    
     public void SetDirection(float dir)
     {
         transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x) * dir, transform.localScale.y, transform.localScale.z);
-        if (UnbeatableGage_Image)
+        if (invincible_Image)
         {
-            UnbeatableGage_Image.transform.parent.localScale = new Vector3(dir, 1, 1);
+            invincible_Image.transform.parent.localScale = new Vector3(dir, 1, 1);
         }
 
     }
@@ -223,7 +291,6 @@ public class ObjectController : MonoBehaviour
     virtual public void GetHurt(float damage)
     {
         anim.SetTrigger("Hit");
-
         stat.Hp -= damage;
         OnHurtEvent.Invoke();
         if (stat.Hp <= 0)
@@ -235,39 +302,17 @@ public class ObjectController : MonoBehaviour
             stat.Hp += value;
         else
             stat.Hp = stat.MaxHp;
-        OnHurtEvent.Invoke();
     }
-    public void Die()
-    {
-        OnDieEvent.Invoke();        
-    }
-    virtual public void DieEvent()
-    {
-        //Instantiate(gameObject, transform.position, Quaternion.identity);
-        rb.constraints = RigidbodyConstraints2D.FreezePositionX;
-        rb.velocity = Vector3.zero;
-        rb.AddForce(new Vector2(0, 400f));
-        anim.SetTrigger("Hit");
-        GetComponent<SpriteRenderer>().flipY = true;
-
-        Destroy(GetComponent<BoxCollider2D>());
-        Destroy(transform.Find("Hitbox").gameObject);
-        Destroy(GetComponent<Move>());
-        Destroy(GetComponent<Bat>());
-        Destroy(gameObject, 2);
-        
-    }
-
     // 무적
     IEnumerator Unbeatable(float time)
     {
         gameObject.layer = LayerMask.NameToLayer("Unbeatable");
-        UnbeatableTime = time;
-        while (UnbeatableTime > 0)
+        invincibleTime = time;
+        while (invincibleTime > 0)
         {
-            UnbeatableTime -= Time.fixedDeltaTime;
-            if (UnbeatableGage_Image)
-                UnbeatableGage_Image.fillAmount = UnbeatableTime / time;
+            invincibleTime -= Time.fixedDeltaTime;
+            if (invincible_Image)
+                invincible_Image.fillAmount = invincibleTime / time;
             yield return new WaitForSeconds(Time.fixedDeltaTime);
         }
         gameObject.layer = mylayer;
@@ -275,8 +320,9 @@ public class ObjectController : MonoBehaviour
 
     public void Ouch()
     {
+        rb.velocity = new Vector2(0, rb.velocity.y);
         StopCoroutine("SetUnMovable");
-        StartCoroutine("SetUnMovable",0.15f);
+        StartCoroutine("SetUnMovable", 0.315f * (1 - stat.Tenasious));
     }
     IEnumerator SetUnMovable(float time)
     {
@@ -284,7 +330,45 @@ public class ObjectController : MonoBehaviour
         yield return new WaitForSeconds(time);
         Movable = true;
     }
+    public void Die()
+    {
+        die = true;
+        if(gameObject == GameManager.instance.player.gameObject)
+            GameManager.instance.uiManager.SetPlayerUIFalse();
+        OnDieEvent.Invoke();
+    }
 
+    public void Knockback(float dir)
+    {
+        if (dir != 0)
+            SetDirection(dir);
+
+        rb.AddForce(new Vector2(-dir * 10, 150f));
+
+        Vector2 m_Velocity = Vector2.zero;
+        Vector2.SmoothDamp(rb.velocity, new Vector2(-dir * 155f, 5), ref m_Velocity, MovementSmoothing);
+    }
+    public void SmallJump()
+    {
+        rb.velocity = new Vector2(rb.velocity.x, 0);
+        float jumpforce = 400f;
+        if (isSlope) jumpforce *= 1.5f;
+        rb.AddForce(new Vector2(0, jumpforce));
+    }
+
+    ////////////////////////////////////////////////////
+    public void invincibility(float time)
+    {
+        if (invincibility_Coroutine != null)
+            StopCoroutine(invincibility_Coroutine);
+
+        invincibility_Coroutine = StartCoroutine("Unbeatable", time);
+
+    }
+    public void AnimatorSetTrigger(string what)
+    {
+        anim.SetTrigger(what);
+    }
 
     /*
     private void OnDrawGizmos()
