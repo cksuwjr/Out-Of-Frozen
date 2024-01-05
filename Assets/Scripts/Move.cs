@@ -17,22 +17,14 @@ public class Move : MonoBehaviour
     {
         if (!controller.Movable) return;
 
-
         MoveDir = Input.GetAxisRaw("Horizontal");
-        //float vetticalInput = Input.GetAxisRaw("Vertical");
 
         if (Input.GetButton("Jump"))
-        {
             Jump = true;
-        }
         if (Input.GetKeyDown(KeyCode.R))
-        {
             Run = true;
-        }
         if (Input.GetKeyUp(KeyCode.R))
-        {
             Run = false;
-        }
         if (Input.GetKeyDown(KeyCode.DownArrow))
         {
             Rigidbody2D rb = GetComponent<Rigidbody2D>();
@@ -45,11 +37,10 @@ public class Move : MonoBehaviour
             controller.Move(MoveDir, RunSpeed, Jump);
         else
             controller.Move(MoveDir, Speed, Jump);
-        GameObject background = GameObject.FindGameObjectWithTag("Background");
+        GameObject[] backgrounds = GameObject.FindGameObjectsWithTag("Background");
 
-
-        if (background)
-            background.GetComponent<Background>().MoveBackground((transform.position.x - bepos.x) * Time.fixedDeltaTime);
+        foreach(GameObject back in backgrounds)
+            back.GetComponent<Background>().MoveBackground((transform.position.x - bepos.x) * Time.fixedDeltaTime);
         bepos = transform.position;
         
 

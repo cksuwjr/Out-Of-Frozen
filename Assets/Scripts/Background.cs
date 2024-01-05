@@ -29,6 +29,8 @@ public class Background : MonoBehaviour
         {
             offset += Speed * Time.fixedDeltaTime;
             render.material.mainTextureOffset = new Vector2(offset, 0);
+            render.sortingLayerName = "Background";
+            render.sortingOrder = 0;
         }
     }
     // Update is called once per frame
@@ -40,6 +42,8 @@ public class Background : MonoBehaviour
         {
             offset += x * Speed;
             render.material.mainTextureOffset = new Vector2(offset, 0);
+            render.sortingLayerName = "Background";
+            render.sortingOrder = 0;
         }
     }
 }
